@@ -1,0 +1,124 @@
+import math
+import os
+
+import httpx
+
+base_url = "https://osu.ppy.sh/api/v2"
+
+
+async def get_token():
+    data = {
+        "client_id": os.environ["OSU_OAUTH_CLIENT_ID"],
+        "client_secret": os.environ["OSU_OAUTH_SECRET"],
+        "grant_type": "client_credentials",
+        "scope": "public"
+    }
+
+    async with httpx.AsyncClient() as client:
+        r = await client.post('https://osu.ppy.sh/oauth/token', json=data)
+        return r.json()["access_token"]
+
+
+async def compute_pp(token, beatmap_id=191771):
+    headers = {
+        'Authorization': f'Bearer {token}',
+    }
+
+    async with httpx.AsyncClient() as request:
+        beatmap_coroutine = request.get(f'{base_url}/beatmaps/{beatmap_id}', headers=headers)
+        attributes_coroutine = request.post(f'{base_url}/beatmaps/{beatmap_id}/attributes', headers=headers)
+
+        beatmap = (await beatmap_coroutine).json()
+        attributes = (await attributes_coroutine).json()
+
+    beatmap['hit_object_count'] = beatmap['count_circles'] + beatmap['count_sliders'] + beatmap['count_spinners']
+    aim_val = compute_aim_value(beatmap, attributes)
+    speed_val = compute_speed_value(beatmap, attributes)
+    accuracy_value = compute_accuracy_value(beatmap, attributes)
+    flashlight_value = compute_flashlight_value(beatmap, attributes)
+
+    # TODO: pp
+    return 0
+
+
+def compute_length_bonus(beatmap):
+    hit_object_count = beatmap["hit_object_count"]
+    long_map_bonus = math.log10(hit_object_count / 2000.0) * 0.5 if hit_object_count > 2000 else 0.0
+    return 0.95 + 0.4 * min(1.0, hit_object_count / 2000) + long_map_bonus
+
+
+def compute_aim_value(beatmap, attributes):
+    '''
+    Notice that:
+        Effective miss count is always 0.
+        Combo scaling factor is always 1.
+        Slider neft factor is always 1.
+        Accuracy is always 1.
+    '''
+
+    aim_val = 5.0 * max(1.0, attributes['aim_difficulty'] / 0.0675) - 4.0
+    aim_val = pow(aim_val, 3.0) / 100000.0
+
+    length_bonus = compute_length_bonus(beatmap)
+
+    aim_val *= length_bonus
+
+    approach_rate = attributes['approach_rate']
+    approach_rate_factor = 0.0
+    if approach_rate > 10.33:
+        approach_rate_factor = 0.3 * (approach_rate - 10.33)
+    elif approach_rate < 8.0:
+        approach_rate_factor = 0.05 * (8.0 - approach_rate)
+
+    aim_val *= 1.0 + approach_rate_factor * length_bonus
+
+    # TODO: apply HD mod reward
+    # if ((_mods & EMods::Hidden) > 0) _aimValue *= 1.0f + 0.04f * (12.0f - approachRate)
+
+    # accuracy is always 100
+    aim_val *= 100
+
+    _aimValue *= 0.98 + (pow(attributes['overall_difficulty'], 2) / 2500.0)
+
+    return aim_val
+
+
+def compute_speed_value(beatmap, attributes):
+    '''
+    Notice that:
+        Effective miss count is always 0.
+        Combo scaling factor is always 1.
+        Slider neft factor is always 1.
+        Accuracy is always 1.
+        Relevant accuracy is always 1
+    '''
+
+    speed_val = pow(5.0 * max(1.0, attributes['speed_difficulty'] / 0.0675) - 4.0, 3.0) / 100000.0
+
+    length_bonus = compute_length_bonus(beatmap)
+    speed_val *= length_bonus
+
+    hit_object_count = beatmap["hit_object_count"]
+    approach_rate = attributes['approach_rate']
+    approach_rate_factor = 0.0
+    if approach_rate > 10.33:
+        approach_rate_factor = 0.3 * (approach_rate - 10.33)
+
+        speed_val *= 1.0 + approach_rate_factor * length_bonus
+
+    # TODO: apply HD mod reward
+    # if ((_mods & EMods::Hidden) > 0) _aimValue *= 1.0f + 0.04f * (12.0f - approachRate)
+
+    speed_val *= (0.95 + pow(attributes['overall_difficulty'], 2) / 750.0)
+
+
+def compute_accuracy_value(beatmap, attributes):
+    pass
+
+
+def compute_flashlight_value(beatmap, attributes):
+    pass
+
+
+def compute_total_value(beatmap, attributes):
+    pass
