@@ -19,7 +19,7 @@ async def get_token():
         return r.json()["access_token"]
 
 
-async def compute_pp(token, beatmap_id=191771):
+async def get_beatmap_data(token, beatmap_id=191771):
     headers = {
         'Authorization': f'Bearer {token}',
     }
@@ -29,16 +29,27 @@ async def compute_pp(token, beatmap_id=191771):
         attributes_coroutine = request.post(f'{base_url}/beatmaps/{beatmap_id}/attributes', headers=headers)
 
         beatmap = (await beatmap_coroutine).json()
-        attributes = (await attributes_coroutine).json()
+        attributes = (await attributes_coroutine).json()['attributes']
 
     beatmap['hit_object_count'] = beatmap['count_circles'] + beatmap['count_sliders'] + beatmap['count_spinners']
+    return (beatmap, attributes)
+
+
+def compute_pp(beatmap, attributes):
+    # TODO: check if valid beatmap to calculate pp
     aim_val = compute_aim_value(beatmap, attributes)
     speed_val = compute_speed_value(beatmap, attributes)
     accuracy_value = compute_accuracy_value(beatmap, attributes)
     flashlight_value = compute_flashlight_value(beatmap, attributes)
 
-    # TODO: pp
-    return 0
+    # TODO: change multipler value for No fail and Spun out mods
+    multiplier = 1.0
+    pp = pow(
+        pow(aim_val, 1.1) + pow(speed_val, 1.1) + pow(accuracy_value, 1.1) + pow(flashlight_value, 1.1),
+        1.0 / 1.1
+    ) * multiplier
+
+    return pp
 
 
 def compute_length_bonus(beatmap):
@@ -78,7 +89,7 @@ def compute_aim_value(beatmap, attributes):
     # accuracy is always 100
     aim_val *= 100
 
-    _aimValue *= 0.98 + (pow(attributes['overall_difficulty'], 2) / 2500.0)
+    aim_val *= 0.98 + (pow(attributes['overall_difficulty'], 2) / 2500.0)
 
     return aim_val
 
@@ -110,15 +121,23 @@ def compute_speed_value(beatmap, attributes):
     # if ((_mods & EMods::Hidden) > 0) _aimValue *= 1.0f + 0.04f * (12.0f - approachRate)
 
     speed_val *= (0.95 + pow(attributes['overall_difficulty'], 2) / 750.0)
+    return speed_val
 
 
 def compute_accuracy_value(beatmap, attributes):
-    pass
+    '''
+    Notice that:
+        Better Accuarcy Percentage is always 1.
+    '''
+    hit_object_with_accuracy_count = beatmap['count_circles']
+
+    accuracy_val = pow(1.52163, attributes['overall_difficulty']) * 2.83
+    accuracy_val *= min(1.15, pow(hit_object_with_accuracy_count / 1000.0, 0.3))
+
+    # TODO: add bonus for hidden and flashlight
+    return accuracy_val
 
 
 def compute_flashlight_value(beatmap, attributes):
-    pass
-
-
-def compute_total_value(beatmap, attributes):
-    pass
+    # TODO:
+    return 0
