@@ -19,7 +19,7 @@ async def get_token():
         return r.json()["access_token"]
 
 
-async def get_beatmap_data(token, beatmap_id=191771):
+async def get_beatmap_data(token, beatmap_id=969686):
     headers = {
         'Authorization': f'Bearer {token}',
     }
@@ -43,19 +43,27 @@ def compute_pp(beatmap, attributes):
     flashlight_value = compute_flashlight_value(beatmap, attributes)
 
     # TODO: change multipler value for No fail and Spun out mods
-    multiplier = 1.0
+    multiplier = 1.14
     pp = pow(
         pow(aim_val, 1.1) + pow(speed_val, 1.1) + pow(accuracy_value, 1.1) + pow(flashlight_value, 1.1),
         1.0 / 1.1
     ) * multiplier
 
+    print(aim_val)
+    print(speed_val)
+    print(accuracy_value)
+    print(flashlight_value)
+    print("===")
+    print(beatmap)
+    print(attributes)
+    print(beatmap['url'])
     return pp
 
 
 def compute_length_bonus(beatmap):
     hit_object_count = beatmap["hit_object_count"]
     long_map_bonus = math.log10(hit_object_count / 2000.0) * 0.5 if hit_object_count > 2000 else 0.0
-    return 0.95 + 0.4 * min(1.0, hit_object_count / 2000) + long_map_bonus
+    return 0.95 + 0.4 * min(1.0, hit_object_count / 2000.0) + long_map_bonus
 
 
 def compute_aim_value(beatmap, attributes):
@@ -86,9 +94,6 @@ def compute_aim_value(beatmap, attributes):
     # TODO: apply HD mod reward
     # if ((_mods & EMods::Hidden) > 0) _aimValue *= 1.0f + 0.04f * (12.0f - approachRate)
 
-    # accuracy is always 100
-    aim_val *= 100
-
     aim_val *= 0.98 + (pow(attributes['overall_difficulty'], 2) / 2500.0)
 
     return aim_val
@@ -115,7 +120,7 @@ def compute_speed_value(beatmap, attributes):
     if approach_rate > 10.33:
         approach_rate_factor = 0.3 * (approach_rate - 10.33)
 
-        speed_val *= 1.0 + approach_rate_factor * length_bonus
+    speed_val *= 1.0 + approach_rate_factor * length_bonus
 
     # TODO: apply HD mod reward
     # if ((_mods & EMods::Hidden) > 0) _aimValue *= 1.0f + 0.04f * (12.0f - approachRate)
