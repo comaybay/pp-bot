@@ -1,8 +1,12 @@
 import os
 
 import discord
+from dotenv import load_dotenv
 
 import helper
+
+load_dotenv()
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -13,20 +17,32 @@ client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     print("I'm up lets go!")
-    token = await helper.get_token()
-    beatmap, attributes = await helper.get_beatmap_data(token)
-    r = helper.compute_pp(beatmap, attributes)
-    print(r)
 
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
+    if message.author == client.user or not message.content.startswith('/pp'):
         return
 
-    if message.content.startswith('/pp'):
-        token = await helper.get_token()
-        await message.channel.send(token)
+    args = message.content.split(" ")
+
+    if len(args) < 2:
+        return
+
+    url = args[1]
+    token = await helper.get_token()
+    (_, beatmap_id) = helper.parse_beatmapset_url(url)
+    beatmap, attributes = await helper.get_beatmap_data(token, beatmap_id)
+    pp = helper.compute_pp(beatmap, attributes)
+
+    beatmapset = beatmap['beatmapset']
+    embed = discord.Embed(
+        title=f"{beatmapset['artist_unicode']} - {beatmapset['title']}",
+        description=f"{beatmapset['play_count']} plays, {beatmapset['favourite_count']} favorites\nMapped by {beatmapset['creator']}\n",
+        url=url
+    )
+
+    await message.channel.send(f'~{pp} pp', embed=embed)
 
 
 PP_BOT_TOKEN = os.environ['PP_BOT_TOKEN']

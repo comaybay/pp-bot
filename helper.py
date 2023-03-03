@@ -1,9 +1,17 @@
 import math
 import os
+import re
 
 import httpx
 
 base_url = "https://osu.ppy.sh/api/v2"
+
+
+def parse_beatmapset_url(url):
+    x = re.search("([0-9]+)#osu/([0-9]+)", url)
+    beatmapset_id = x[1]
+    beatmap_id = x[2]
+    return (beatmapset_id, beatmap_id)
 
 
 async def get_token():
@@ -19,10 +27,8 @@ async def get_token():
         return r.json()["access_token"]
 
 
-async def get_beatmap_data(token, beatmap_id=969686):
-    headers = {
-        'Authorization': f'Bearer {token}',
-    }
+async def get_beatmap_data(token, beatmap_id):
+    headers = {'Authorization': f'Bearer {token}'}
 
     async with httpx.AsyncClient() as request:
         beatmap_coroutine = request.get(f'{base_url}/beatmaps/{beatmap_id}', headers=headers)
@@ -54,8 +60,7 @@ def compute_pp(beatmap, attributes):
     print(accuracy_value)
     print(flashlight_value)
     print("===")
-    print(beatmap)
-    print(attributes)
+
     print(beatmap['url'])
     return pp
 
@@ -114,7 +119,6 @@ def compute_speed_value(beatmap, attributes):
     length_bonus = compute_length_bonus(beatmap)
     speed_val *= length_bonus
 
-    hit_object_count = beatmap["hit_object_count"]
     approach_rate = attributes['approach_rate']
     approach_rate_factor = 0.0
     if approach_rate > 10.33:
