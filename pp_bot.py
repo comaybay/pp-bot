@@ -39,11 +39,14 @@ async def on_message(message):
     embed = discord.Embed(
         title=f"{beatmapset['artist_unicode']} - {beatmapset['title']}",
         description=f"{beatmapset['play_count']} plays, {beatmapset['favourite_count']} favorites\nMapped by {beatmapset['creator']}\n",
-        url=url
+        url=url,
+        color=0xFF66AA
     )
 
-    await message.channel.send(f'~{pp} pp', embed=embed)
+    embed.set_thumbnail(url=beatmapset['covers']['list'])
+    embed.add_field(name="Max pp:", value=f"~{pp} pp", inline=True)
 
+    await message.channel.send(embed=embed)
 
 PP_BOT_TOKEN = os.environ['PP_BOT_TOKEN']
 client.run(PP_BOT_TOKEN)

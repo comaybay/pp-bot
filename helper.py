@@ -55,14 +55,7 @@ def compute_pp(beatmap, attributes):
         1.0 / 1.1
     ) * multiplier
 
-    print(aim_val)
-    print(speed_val)
-    print(accuracy_value)
-    print(flashlight_value)
-    print("===")
-
-    print(beatmap['url'])
-    return pp
+    return round(pp, 2)
 
 
 def compute_length_bonus(beatmap):
