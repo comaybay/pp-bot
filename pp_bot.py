@@ -3,7 +3,7 @@ import os
 import discord
 from dotenv import load_dotenv
 
-import helper
+import pp_helper
 
 load_dotenv()
 
@@ -30,10 +30,13 @@ async def on_message(message):
         return
 
     url = args[1]
-    token = await helper.get_token()
-    (_, beatmap_id) = helper.parse_beatmapset_url(url)
-    beatmap, attributes = await helper.get_beatmap_data(token, beatmap_id)
-    pp = helper.compute_pp(beatmap, attributes)
+    token = await pp_helper.get_token()
+    (_, beatmap_id) = pp_helper.parse_beatmapset_url(url)
+    beatmap, attributes = await pp_helper.get_beatmap_data(token, beatmap_id)
+
+    if ()
+
+    pp = pp_helper.compute_pp(beatmap, attributes)
 
     beatmapset = beatmap['beatmapset']
     embed = discord.Embed(
