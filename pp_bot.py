@@ -36,7 +36,7 @@ async def on_message(message):
 
     if command == 'size':
         if len(others) == 0:
-            await message.channel.send(f"{message.author.mention} don't be shy, please input pp size")
+            await message.channel.send(f"{message.author.mention} don't be shy, please provide the pp size")
         else:
             result = pp_joke.judge_pp(float(others[0]))
             await message.channel.send(f"{message.author.mention} {result}")
