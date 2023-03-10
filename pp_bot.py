@@ -3,7 +3,9 @@ import os
 import discord
 from dotenv import load_dotenv
 
+import pp_comand_parser
 import pp_helper
+import pp_joke
 
 load_dotenv()
 
@@ -24,17 +26,27 @@ async def on_message(message):
     if message.author == client.user or not message.content.startswith('/pp'):
         return
 
-    args = message.content.split(" ")
+    result = pp_comand_parser.parse(message.content)
 
-    if len(args) < 2:
+    if type(result) == str:
+        await message.channel.send(f"{message.author.mention} Error: {result}")
         return
 
-    url = args[1]
+    (general_flags, general_options, command, command_flags, command_options, others) = result
+
+    if command == 'size':
+        if len(others) == 0:
+            await message.channel.send(f"{message.author.mention} don't be shy, please input pp size")
+        else:
+            result = pp_joke.judge_pp(float(others[0]))
+            await message.channel.send(f"{message.author.mention} {result}")
+
+        return
+
+    url = command
     token = await pp_helper.get_token()
     (_, beatmap_id) = pp_helper.parse_beatmapset_url(url)
     beatmap, attributes = await pp_helper.get_beatmap_data(token, beatmap_id)
-
-    if ()
 
     pp = pp_helper.compute_pp(beatmap, attributes)
 
