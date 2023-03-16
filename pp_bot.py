@@ -53,7 +53,13 @@ async def on_message(message):
     (_, beatmap_id) = pp_helper.parse_beatmapset_url(url)
     beatmap, attributes = await pp_helper.get_beatmap_data(token, beatmap_id)
 
-    pp = pp_helper.compute_pp(beatmap, attributes)
+    try:
+        accuracy = float(command_options.get("-a", 100)) / 100.0
+    except ValueError:
+        await message.channel.send(f"{message.author.mention} invalid value for -a (accuracy), please provide a number from 0 to 100")
+        return
+
+    pp = pp_helper.compute_pp(beatmap, attributes, accuracy)
 
     beatmapset = beatmap['beatmapset']
     embed = discord.Embed(
@@ -64,7 +70,8 @@ async def on_message(message):
     )
 
     embed.set_thumbnail(url=beatmapset['covers']['list'])
-    embed.add_field(name="Max pp:", value=f"~{pp} pp", inline=True)
+    embed.add_field(name=f"Total pp (with {accuracy * 100}% accuarcy):",
+                    value=f"~{pp} pp ({round(pp)} pp)", inline=True)
 
     await message.channel.send(embed=embed)
 

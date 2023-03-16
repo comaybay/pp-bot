@@ -3,15 +3,20 @@
 import re
 
 
-def parse(command: str):
-    args = command.split()
+def parse(pp_command: str) -> tuple[set, dict, str, set, dict, list]:
+    '''
+    Parse command string and return command information
+    Returns:
+        (general_flags: set, general_options: dict, command: str, command_flags: set, command_options: dict, others: list)        
+    '''
+    args = pp_command.split()
 
     command = ""
-    general_flags = []
-    general_options = []
+    general_flags = set()
+    general_options = {}
 
-    command_flags = []
-    command_options = []
+    command_flags = set()
+    command_options = {}
     others = []
 
     index = 0
@@ -25,7 +30,7 @@ def parse(command: str):
             continue
 
         if arg.startswith('--'):
-            flags.append(arg)
+            flags.add(arg)
             index += 1
 
         elif arg[0] == '-':
@@ -37,7 +42,7 @@ def parse(command: str):
             if value[0] == '-':
                 return f"please provide input value for '{arg}'"
 
-            options.append((arg, value))
+            options[arg] = value
             index += 2
 
         elif command == '':
